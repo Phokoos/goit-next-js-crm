@@ -1,31 +1,49 @@
-'use client';
+"use client";
+import { useCallback, useRef, useEffect, MouseEventHandler } from "react";
+import { useRouter } from "next/navigation";
 
-import React, { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+export default function Modal({ children } ) {
+  const overlay = useRef(null);
+  const wrapper = useRef(null);
+  const router = useRouter();
 
-export default function Modal({ show, children, onClose }) {
+  const onDismiss = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const onClick = useCallback(
+    (e) => {
+      if (e.target === overlay.current || e.target === wrapper.current) {
+        if (onDismiss) onDismiss();
+      }
+    },
+    [onDismiss, overlay, wrapper]
+  );
+
+  const onKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape") onDismiss();
+    },
+    [onDismiss]
+  );
+
+  useEffect(() => {
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onKeyDown]);
+
   return (
-    <Transition.Root as={Fragment} show={show}>
-      <Dialog
-        as="div"
-        className="fixed inset-0 z-50 flex items-center"
-        onClose={onClose}
+    <div
+      ref={overlay}
+      className="fixed z-10 left-0 right-0 top-0 bottom-0 mx-auto bg-black/60 p-10"
+      onClick={onClick}
+    >
+      <div
+        ref={wrapper}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:w-10/12 md:w-8/12 lg:w-2/5 p-6"
       >
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-gray-500 opacity-75 transition-opacity" />
-        </Transition.Child>
-        <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white shadow-xl transition-all p-7 mx-auto sm:my-10 sm:w-full sm:max-w-2xl">
-          {children}
-        </Dialog.Panel>
-      </Dialog>
-    </Transition.Root>
+        {children}
+      </div>
+    </div>
   );
 }
